@@ -1,8 +1,11 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <vector>
 #include <ctime>
+#include <queue>
 #include <array>
+using namespace std;
 
 enum SPOT_STATE
 {
@@ -41,11 +44,12 @@ enum TYPE
 };
 
 const int typenum = 8;
-const int maxmove = 3;
+const int maxmove = 1;
 const int dir[4][2] = {-1, 1, 0, 1, 1, 1, 1, 0};
 const int dic[typenum] = {94879487, 9487878, 948787, 9487, 8700, 2000, 487, 187};
+const int Dir[8][2] = {-1, 1, 0, 1, 1, 1, 1, 0, 1, -1, 0, -1, -1, -1, -1, 0};
 
-int judge(std::string &ref)
+int judge(string &ref)
 {
     if (ref.size() == 4)
     {
@@ -129,17 +133,21 @@ int judge(std::string &ref)
         if (ref == "O.XXX.O")
             return SLEEP_THREE;
     }
+    return -1;
 }
 
 class state
 {
 public:
-    state()
+    state(int a)
     {
         for (int i = 0; i < (typenum << 1); i++)
             type[i] = 0;
         val = 0;
-        cur = player;
+        if ((player == 1 && a == 0) || (player == 2 && a == 1))
+            cur = 1;
+        else
+            cur = 2;
         evaluate();
         caculate();
     };
@@ -149,18 +157,18 @@ public:
 private:
     void evaluate()
     {
-        int val = 0, x, y;
+        int x, y, t;
         for (int d = 0; d < 4; d++)
         {
             for (int i = 0; i < SIZE; i++)
             {
                 for (int j = 0; j < SIZE; j++)
                 {
-                    std::string tmp;
+                    string tmp;
                     x = i, y = j;
                     while (x >= 0 && y >= 0 && x < SIZE && y < SIZE && tmp.size() < 7)
                     {
-                        switch (board[i][j])
+                        switch (board[x][y])
                         {
                         case EMPTY:
                             tmp += '.';
@@ -173,7 +181,11 @@ private:
                             break;
                         }
                         if (tmp.size() > 3 && tmp.size() < 8)
-                            type[judge(tmp)]++;
+                        {
+                            t = judge(tmp);
+                            if (t > 0)
+                                type[t]++;
+                        }
                         x += dir[d][0];
                         y += dir[d][1];
                     }
@@ -185,17 +197,91 @@ private:
     {
         for (int i = 0; i < (typenum << 1); i++)
         {
-            if (i <= typenum)
-                val += type[i] * dic[i];
+            if (i < typenum)
+            {
+                if (cur == 1)
+                    val += type[i] * dic[i];
+                else
+                    val -= type[i] * dic[i];
+            }
             else
-                val -= type[i] * dic[i - typenum];
+            {
+                if (cur == 1)
+                    val -= type[i] * dic[i - typenum];
+                else
+                    val += type[i] * dic[i - typenum];
+            }
         }
     }
 };
 
-void dfs(int step, std::ofstream &fout)
+int dfs(int step, ofstream &fout)
 {
-    state cur;
+    // initiallize
+    state cur(step & 1);
+
+    // base case
+    if (step == maxmove)
+        return cur.val;
+
+    // find candicate
+    int dist[15][15];
+    vector<pair<int, int>> candicate;
+    queue<pair<int, int>> q;
+    for (int i = 0; i < SIZE; i++)
+        for (int j = 0; j < SIZE; j++)
+        {
+            if (board[i][j] != 0)
+            {
+                q.emplace(i, j);
+                dist[i][j] = 0;
+            }
+            else
+                dist[i][j] = 87;
+        }
+    while (!q.empty())
+    {
+        int x, y;
+        auto tmp = q.front();
+        if (dist[tmp.first][tmp.second] == 1)
+            break;
+        q.pop();
+        for (int i = 0; i < 8; i++)
+        {
+            x = tmp.first + Dir[i][0];
+            y = tmp.second + Dir[i][1];
+            if (x >= 0 && y >= 0 && x < SIZE && y < SIZE)
+            {
+                if (dist[x][y] > dist[tmp.first][tmp.second] + 1)
+                {
+                    dist[x][y] = dist[tmp.first][tmp.second] + 1;
+                    candicate.emplace_back(x, y);
+                    q.emplace(x, y);
+                }
+            }
+        }
+    }
+    if (candicate.empty())
+        candicate.emplace_back(8, 7);
+
+    // recursion
+    int min = 1e9 + 87;
+    for (auto tmp : candicate)
+    {
+        board[tmp.first][tmp.second] = player + (step & 1);
+        int v = dfs(step + 1, fout);
+        board[tmp.first][tmp.second] = 0;
+        if (v < min)
+        {
+            min = v;
+            if (step == 0)
+            {
+                fout << tmp.first << " " << tmp.second << endl;
+                fout.flush();
+            }
+        }
+    }
+    return min;
 }
 
 /***********************************************************************************************************************************************/
