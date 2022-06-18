@@ -46,24 +46,11 @@ enum TYPE
 const int typenum = 8;
 const int maxmove = 1;
 const int dir[4][2] = {-1, 1, 0, 1, 1, 1, 1, 0};
-const int dic[typenum] = {94879487, 9487878, 948787, 9487, 8700, 2000, 487, 187};
+const int dic[10] = {94879487, 9487487, 948787, 94878, 48700, 9487, 4870, 870, 487, 87};
 const int Dir[8][2] = {-1, 1, 0, 1, 1, 1, 1, 0, 1, -1, 0, -1, -1, -1, -1, 0};
 
 int judge(string &ref)
 {
-    if (ref.size() == 4)
-    {
-        // JUMP_THREE OO.O || O.OO
-        if (ref == "OO.O" || ref == "O.OO")
-            return JUMP_THREE;
-        if (ref == "XX.X" || ref == "X.XX")
-            return typenum + JUMP_THREE;
-        // TWO O..O
-        if (ref == "O..O")
-            return TWO;
-        if (ref == "X..X")
-            return typenum + TWO;
-    }
     if (ref.size() == 5)
     {
         // FIVE OOOOO
@@ -105,19 +92,24 @@ int judge(string &ref)
         if (ref == ".XXXX.")
             return typenum + FOUR;
         // DEAD_FOUR XOOOO. || .OOOOX
-        if (ref == "XOOO." || ref == ".OOOOX")
+        if (ref == "XOOOO." || ref == ".OOOOX")
             return DEAD_FOUR;
-        if (ref == "OXXX." || ref == ".XXXXO")
+        if (ref == "OXXXX." || ref == ".XXXXO")
             return typenum + DEAD_FOUR;
+        // JUMP_THREE OO.O || O.OO
+        if (ref == ".OO.O." || ref == ".O.OO.")
+            return JUMP_THREE;
+        if (ref == ".XX.X." || ref == ".X.XX.")
+            return typenum + JUMP_THREE;
         // SLEEP_THREE XOOO.. || ..OOOX || XOO.O. || .O.OOX || XO.OO. || .OO.OX
         if (ref == "XOOO.." || ref == "..OOOX" || ref == "XOO.O." || ref == ".O.OOX" || ref == "XO.OO." || ref == ".OO.OX")
             return SLEEP_THREE;
         if (ref == "OXXX.." || ref == "..XXXO" || ref == "OXX.X." || ref == ".X.XXO" || ref == "OX.XX." || ref == ".XX.XO")
             return typenum + SLEEP_THREE;
-        // TWO ..OO..
-        if (ref == "..OO..")
+        // TWO ..OO.. || .O..O.
+        if (ref == "..OO.." || ref == ".O..O.")
             return TWO;
-        if (ref == "..XX..")
+        if (ref == "..XX.." || ref == ".X..X.")
             return typenum + TWO;
         // SLEEP_TWO XOO... || ...OOX || XO.O.. || ..O.OX || XO..O. || .O..OX
         if (ref == "XOO..." || ref == "...OOX" || ref == "XO.O.." || ref == "..O.OX" || ref == "XO..O." || ref == ".O..OX")
@@ -180,7 +172,7 @@ private:
                             tmp += 'X';
                             break;
                         }
-                        if (tmp.size() > 3 && tmp.size() < 8)
+                        if (tmp.size() > 4 && tmp.size() < 8)
                         {
                             t = judge(tmp);
                             if (t > 0)
@@ -195,22 +187,47 @@ private:
     }
     void caculate()
     {
-        for (int i = 0; i < (typenum << 1); i++)
+        if (cur == 2)
         {
-            if (i < typenum)
-            {
-                if (cur == 1)
-                    val += type[i] * dic[i];
-                else
-                    val -= type[i] * dic[i];
-            }
-            else
-            {
-                if (cur == 1)
-                    val -= type[i] * dic[i - typenum];
-                else
-                    val += type[i] * dic[i - typenum];
-            }
+            // atk
+            val += type[FIVE] * dic[0];
+            val += type[FOUR] * dic[2];
+            val += type[DEAD_FOUR] * dic[4];
+            val += type[JUMP_THREE] * dic[5];
+            val += type[THREE] * dic[5];
+            val += type[SLEEP_THREE] * dic[7];
+            val += type[TWO] * dic[8];
+            val += type[SLEEP_TWO] * dic[9];
+            // def
+            val -= type[typenum + FIVE] * dic[0];
+            val -= type[typenum + FOUR] * dic[1];
+            val -= type[typenum + DEAD_FOUR] * dic[1];
+            val -= type[typenum + JUMP_THREE] * dic[3];
+            val -= type[typenum + THREE] * dic[3];
+            val -= type[typenum + SLEEP_THREE] * dic[7];
+            val -= type[typenum + TWO] * dic[8];
+            val -= type[typenum + SLEEP_TWO] * dic[9];
+        }
+        else
+        {
+            // atk
+            val -= type[FIVE] * dic[0];
+            val -= type[FOUR] * dic[1];
+            val -= type[DEAD_FOUR] * dic[1];
+            val -= type[JUMP_THREE] * dic[3];
+            val -= type[THREE] * dic[3];
+            val -= type[SLEEP_THREE] * dic[7];
+            val -= type[TWO] * dic[8];
+            val -= type[SLEEP_TWO] * dic[9];
+            // def
+            val += type[typenum + FIVE] * dic[0];
+            val += type[typenum + FOUR] * dic[2];
+            val += type[typenum + DEAD_FOUR] * dic[4];
+            val += type[typenum + JUMP_THREE] * dic[5];
+            val += type[typenum + THREE] * dic[5];
+            val += type[typenum + SLEEP_THREE] * dic[7];
+            val += type[typenum + TWO] * dic[8];
+            val += type[typenum + SLEEP_TWO] * dic[9];
         }
     }
 };
@@ -265,23 +282,20 @@ int dfs(int step, ofstream &fout)
         candicate.emplace_back(8, 7);
 
     // recursion
-    int min = 1e9 + 87;
+    int max = -1e9 - 87;
     for (auto tmp : candicate)
     {
         board[tmp.first][tmp.second] = player + (step & 1);
         int v = dfs(step + 1, fout);
         board[tmp.first][tmp.second] = 0;
-        if (v < min)
+        if (v > max)
         {
-            min = v;
+            max = v;
             if (step == 0)
-            {
-                fout << tmp.first << " " << tmp.second << endl;
-                fout.flush();
-            }
+                fout << tmp.first << ' ' << tmp.second << '\n';
         }
     }
-    return min;
+    return max;
 }
 
 /***********************************************************************************************************************************************/
