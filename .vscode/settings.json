@@ -49,6 +49,8 @@
         "xutility": "cpp",
         "queue": "cpp",
         "algorithm": "cpp",
-        "deque": "cpp"
+        "deque": "cpp",
+        "random": "cpp",
+        "xtree": "cpp"
     }
 }
