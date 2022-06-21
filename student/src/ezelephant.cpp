@@ -39,6 +39,7 @@ enum TYPE
     FIVE,
     FOUR,
     DEAD_FOUR,
+    SPECIAL_FOUR,
     JUMP_THREE,
     THREE,
     SLEEP_THREE,
@@ -47,11 +48,11 @@ enum TYPE
 };
 
 const int INF = 1e9 + 87;
-const int typenum = 8;
+const int typenum = 9;
 const int dir[4][2] = {-1, 1, 0, 1, 1, 1, 1, 0};
 const int dic[10] = {94879487, 9487487, 948787, 94878, 48700, 9487, 4870, 870, 487, 87};
 const int Dir[8][2] = {-1, 1, 0, 1, 1, 1, 1, 0, 1, -1, 0, -1, -1, -1, -1, 0};
-int maxmove = 3;
+int maxmove;
 
 int cnt, center_x, center_y;
 pair<int, int> ans;
@@ -81,7 +82,9 @@ int judge(string &ref)
         }
         else
         {
-            if (ref[1] == '.')
+            if (ref[4] == '.')
+                return -1;
+            else if (ref[1] == '.')
             {
                 // SLEEP_TWO O...O
                 if (ref == "O...O")
@@ -111,11 +114,11 @@ int judge(string &ref)
                 }
                 else
                 {
-                    // DEAD_FOUR O.OOO || OOO.O
+                    // SPECIAL_FOUR O.OOO || OOO.O
                     if (ref == "O.OOO" || ref == "OOO.O")
-                        return DEAD_FOUR;
+                        return SPECIAL_FOUR;
                     if (ref == "X.XXX" || ref == "XXX.X")
-                        return typenum + DEAD_FOUR;
+                        return typenum + SPECIAL_FOUR;
                     // FIVE OOOOO
                     if (ref == "OOOOO")
                         return FIVE;
@@ -125,25 +128,42 @@ int judge(string &ref)
             }
         }
     }
-    if (ref.size() == 6)
+    else if (ref.size() == 6)
     {
         if (ref[1] == '.' && ref[0] == '.')
         {
-            // SLEEP_TWO ...OOX || ..O.OX
-            if (ref == "...OOX" || ref == "..O.OX")
-                return SLEEP_TWO;
-            if (ref == "...XXO" || ref == "..X.XO")
-                return typenum + SLEEP_TWO;
-            // TWO ..OO..
-            if (ref == "..OO..")
-                return TWO;
-            if (ref == "..XX..")
-                return typenum + TWO;
-            // SLEEP_THREE ..OOOX
-            if (ref == "..OOOX")
-                return SLEEP_THREE;
-            if (ref == "..XXXO")
-                return typenum + SLEEP_THREE;
+            if (ref[2] == '.')
+            {
+                // SLEEP_TWO ...OOX
+                if (ref == "...OOX")
+                    return SLEEP_TWO;
+                if (ref == "...XXO")
+                    return typenum + SLEEP_TWO;
+            }
+            else if (ref[3] == '.')
+            {
+                // SLEEP_TWO ..O.OX
+                if (ref == "..O.OX")
+                    return SLEEP_TWO;
+                if (ref == "..X.XO")
+                    return typenum + SLEEP_TWO;
+            }
+            else if (ref[4] == '.')
+            {
+                // TWO ..OO..
+                if (ref == "..OO..")
+                    return TWO;
+                if (ref == "..XX..")
+                    return typenum + TWO;
+            }
+            else
+            {
+                // SLEEP_THREE ..OOOX
+                if (ref == "..OOOX")
+                    return SLEEP_THREE;
+                if (ref == "..XXXO")
+                    return typenum + SLEEP_THREE;
+            }
         }
         else
         {
@@ -169,6 +189,8 @@ int judge(string &ref)
                 }
                 else
                 {
+                    if (ref[4] == '.')
+                        return -1;
                     // SLEEP_TWO .O..OX
                     if (ref == ".O..OX")
                         return SLEEP_TWO;
@@ -188,6 +210,8 @@ int judge(string &ref)
             }
             else
             {
+                if (ref[1] == '.')
+                    return -1;
                 // SLEEP_TWO XOO... || XO.O.. || XO..O. || .O..OX
                 if (ref == "XOO..." || ref == "XO.O.." || ref == "XO..O.")
                     return SLEEP_TWO;
@@ -206,18 +230,24 @@ int judge(string &ref)
             }
         }
     }
-    if (ref.size() == 7)
+    else
     {
-        // SLEEP_THREE X.OOO.X
-        if (ref == "X.OOO.X")
-            return SLEEP_THREE;
-        if (ref == "O.XXX.O")
-            return typenum + SLEEP_THREE;
-        // THREE
-        if (ref == ".O.O.O.")
-            return SLEEP_THREE;
-        if (ref == ".X.X.X.")
-            return typenum + SLEEP_THREE;
+        if (ref[0] == '.')
+        {
+            // SLEEP_THREE
+            if (ref == ".O.O.O.")
+                return SLEEP_THREE;
+            if (ref == ".X.X.X.")
+                return typenum + SLEEP_THREE;
+        }
+        else
+        {
+            // SLEEP_THREE X.OOO.X
+            if (ref == "X.OOO.X")
+                return SLEEP_THREE;
+            if (ref == "O.XXX.O")
+                return typenum + SLEEP_THREE;
+        }
     }
     return -1;
 }
@@ -244,16 +274,16 @@ private:
     void evaluate()
     {
         int x, y, t;
-        for (int i = 0; i < SIZE; i++)
+        for (int d = 0; d < 4; d++)
         {
             for (int j = 0; j < SIZE; j++)
             {
-                int space = 0;
-                for (int d = 0; d < 4; d++)
+                for (int i = 0; i < SIZE; i++)
                 {
                     string tmp;
+                    int space = 0;
                     x = i, y = j;
-                    while (y < SIZE && x < SIZE && x >= 0 && tmp.size() < 7 && y >= 0)
+                    while (tmp.size() < 7 && y < SIZE && x < SIZE && x >= 0 && y >= 0)
                     {
                         switch (board[x][y])
                         {
@@ -268,12 +298,14 @@ private:
                             tmp += 'X';
                             break;
                         }
-                        if (tmp == "....")
+                        if (space == 4 && tmp == "....")
                             break;
-                        if (tmp.size() > 4 && tmp.size() < 8)
+                        else if (space > 4)
+                            break;
+                        else if (tmp.size() > 4 && tmp.size() < 8)
                         {
                             t = judge(tmp);
-                            if (t >= 0)
+                            if (t != -1)
                                 type[t]++;
                         }
                         x += dir[d][0];
@@ -291,6 +323,7 @@ private:
             val -= type[typenum + FIVE] * dic[0];
             val -= type[typenum + FOUR] * dic[1];
             val -= type[typenum + DEAD_FOUR] * dic[1];
+            val -= type[typenum + SPECIAL_FOUR] * dic[1];
             val -= type[typenum + JUMP_THREE] * dic[3];
             val -= type[typenum + THREE] * dic[3];
             val -= type[typenum + SLEEP_THREE] * dic[7];
@@ -300,12 +333,13 @@ private:
             val += type[FIVE] * dic[0];
             val += type[FOUR] * dic[2];
             val += type[DEAD_FOUR] * dic[4];
+            val += type[SPECIAL_FOUR] * dic[4];
             val += type[JUMP_THREE] * dic[5];
             val += type[THREE] * dic[5];
             val += type[SLEEP_THREE] * dic[7];
             val += type[TWO] * dic[8];
             val += type[SLEEP_TWO] * dic[9];
-            if (type[DEAD_FOUR] + type[JUMP_THREE] + type[THREE] > 2)
+            if (type[DEAD_FOUR] + type[JUMP_THREE] + type[THREE] >= 2)
                 val += dic[2];
         }
         else
@@ -314,6 +348,7 @@ private:
             val -= type[FIVE] * dic[0];
             val -= type[FOUR] * dic[1];
             val -= type[DEAD_FOUR] * dic[1];
+            val -= type[SPECIAL_FOUR] * dic[1];
             val -= type[JUMP_THREE] * dic[3];
             val -= type[THREE] * dic[3];
             val -= type[SLEEP_THREE] * dic[7];
@@ -323,12 +358,13 @@ private:
             val += type[typenum + FIVE] * dic[0];
             val += type[typenum + FOUR] * dic[2];
             val += type[typenum + DEAD_FOUR] * dic[4];
+            val += type[typenum + SPECIAL_FOUR] * dic[4];
             val += type[typenum + JUMP_THREE] * dic[5];
             val += type[typenum + THREE] * dic[5];
             val += type[typenum + SLEEP_THREE] * dic[7];
             val += type[typenum + TWO] * dic[8];
             val += type[typenum + SLEEP_TWO] * dic[9];
-            if (type[DEAD_FOUR] + type[JUMP_THREE] + type[THREE] > 2)
+            if (type[typenum + DEAD_FOUR] + type[typenum + JUMP_THREE] + type[typenum + THREE] >= 2)
                 val += dic[2];
         }
     }
@@ -381,7 +417,7 @@ int dfs(int step, int alpha, int beta)
     {
         int x, y;
         auto tmp = q.front();
-        if (dist[tmp.first][tmp.second] == 1)
+        if (dist[tmp.first][tmp.second] == 2)
             break;
         q.pop();
         for (int i = 0; i < 8; i++)
@@ -414,8 +450,8 @@ int dfs(int step, int alpha, int beta)
             return INF;
     }
     int size = candicate.size();
-    if (size > 20)
-        candicate.resize(20);
+    if (size > 10)
+        candicate.resize(10);
 
     // recursion
     if (step % 2 == 0)
@@ -486,6 +522,7 @@ int main(int, char **argv)
     for (maxmove = 1; true; maxmove += 2)
     {
         int score = dfs(0, -INF, INF);
+        cerr << maxmove << endl;
         fout << ans.first << ' ' << ans.second << endl;
         if (score == INF)
             break;
