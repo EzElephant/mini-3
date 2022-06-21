@@ -339,8 +339,16 @@ private:
             val += type[SLEEP_THREE] * dic[7];
             val += type[TWO] * dic[8];
             val += type[SLEEP_TWO] * dic[9];
-            if (type[DEAD_FOUR] + type[JUMP_THREE] + type[THREE] >= 2)
-                val += dic[2];
+            if (type[DEAD_FOUR] > 0)
+            {
+                if (type[DEAD_FOUR] + type[JUMP_THREE] + type[THREE] >= 2)
+                    val += dic[2];
+            }
+            else
+            {
+                if (type[JUMP_THREE] + type[THREE] >= 2)
+                    val += dic[4];
+            }
         }
         else
         {
@@ -364,8 +372,16 @@ private:
             val += type[typenum + SLEEP_THREE] * dic[7];
             val += type[typenum + TWO] * dic[8];
             val += type[typenum + SLEEP_TWO] * dic[9];
-            if (type[typenum + DEAD_FOUR] + type[typenum + JUMP_THREE] + type[typenum + THREE] >= 2)
-                val += dic[2];
+            if (type[typenum + DEAD_FOUR] > 0)
+            {
+                if (type[typenum + DEAD_FOUR] + type[typenum + JUMP_THREE] + type[typenum + THREE] >= 2)
+                    val += dic[2];
+            }
+            else
+            {
+                if (type[typenum + JUMP_THREE] + type[typenum + THREE] >= 2)
+                    val += dic[4];
+            }
         }
     }
 };
